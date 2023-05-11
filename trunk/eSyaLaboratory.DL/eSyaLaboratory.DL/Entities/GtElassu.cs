@@ -1,0 +1,23 @@
+﻿using System;
+using System.Collections.Generic;
+
+namespace eSyaLaboratory.DL.Entities
+{
+    public partial class GtElassu
+    {
+        public int BusinessKey { get; set; }
+        public int ServiceId { get; set; }
+        public int Unit { get; set; }
+        public bool IsNumericResultValue { get; set; }
+        public bool ResultComputed { get; set; }
+        public string ResultFormula { get; set; }
+        public bool ActiveStatus { get; set; }
+        public string FormId { get; set; }
+        public int CreatedBy { get; set; }
+        public DateTime CreatedOn { get; set; }
+        public string CreatedTerminal { get; set; }
+        public int? ModifiedBy { get; set; }
+        public DateTime? ModifiedOn { get; set; }
+        public string ModifiedTerminal { get; set; }
+    }
+}

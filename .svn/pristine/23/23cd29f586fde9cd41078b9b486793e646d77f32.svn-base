@@ -1,0 +1,17 @@
+﻿using eSyaLaboratory.DO;
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Threading.Tasks;
+
+
+namespace eSyaLaboratory.IF
+{
+    public interface IServiceTemplateCreatorRepository
+    {
+        Task<List<DO_ResultType>> GetResultTypes();
+        Task<List<DO_ServiceTemplateCreator>> GetServiceTemplateByBKeyServiceClass(int businessKey, int serviceClass);
+        Task<DO_ServiceTemplateCreator> GetServiceTemplateByBKeyServiceID(int businessKey, int serviceID);
+        Task<DO_ReturnParameter> AddOrUpdateServiceTemplateMaster(DO_ServiceTemplateCreator obj);
+    }
+}

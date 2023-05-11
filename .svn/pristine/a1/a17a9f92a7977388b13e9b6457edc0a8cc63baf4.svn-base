@@ -1,0 +1,180 @@
+﻿using eSyaLaboratory.DL.Entities;
+using eSyaLaboratory.DO;
+using eSyaLaboratory.IF;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace eSyaLaboratory.DL.Repository
+{
+    public class ServiceTemplateCreatorRepository : IServiceTemplateCreatorRepository
+    {
+        public async Task<List<DO_ResultType>> GetResultTypes()
+        {
+            try
+            {
+                using (eSyaEnterprise db = new eSyaEnterprise())
+                {
+                    var result = db.GtElarty
+                        .Where(w => w.ActiveStatus)
+                                 .Select(x => new DO_ResultType
+                                 {
+                                     ResultType = x.ResultType,
+                                     ResultTypeDesc = x.ResultTypeDesc,
+                                 }
+                        ).ToListAsync();
+                    return await result;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+        public async Task<List<DO_ServiceTemplateCreator>> GetServiceTemplateByBKeyServiceClass(int businessKey,int serviceClass)
+        {
+            try
+            {
+                using (eSyaEnterprise db = new eSyaEnterprise())
+                {
+                    var result = db.GtEssrms.Where(w=>w.ServiceClassId == serviceClass)
+                        .GroupJoin(db.GtElasms.Where(w => w.BusinessKey == businessKey),
+                        s => s.ServiceId,
+                        t => t.ServiceId,
+                        (s, t) => new { s, t = t.FirstOrDefault() }).DefaultIfEmpty()
+                        //.Join(db.GtElarty,
+                        //st => st.t.ResultType,
+                        //r => r.ResultType,
+                        //(st, r) => new { st, r })
+                        //.Join(db.GtEcapcd,
+                        //str => str.st.t.SampleType,
+                        //m => m.ApplicationCode,
+                        //(str, m) => new { str, m })
+                                 .Select(x => new DO_ServiceTemplateCreator
+                                 {
+                                     //ServiceId = x.str.st.s.ServiceId,
+                                     //ServiceShortDesc = x.str.st.s.ServiceShortDesc,
+                                     //ServiceDesc = x.str.st.s.ServiceDesc,
+                                     //ResultType = x.str.st.t != null ? x.str.st.t.ResultType : " ",
+                                     //ResultTypeDesc = x.str.st.t != null ? x.str.r.ResultTypeDesc : " ",
+                                     //SampleTypeDesc = x.str.st.t != null ? x.m.CodeDesc : " ",
+                                     //LabPrintSequence = x.str.st.t != null ? x.str.st.t.LabPrintSequence : 0,
+                                     //TimeRequiredForReport = x.str.st.t != null ? x.str.st.t.TimeRequiredForReport : 0,
+
+
+                                     //IsResultCreated = x.str.st.t != null ? true : false,
+
+                                     ServiceId = x.s.ServiceId,
+                                     ServiceShortDesc = x.s.ServiceShortDesc,
+                                     ServiceDesc = x.s.ServiceDesc,
+                                     ResultType = x.t != null ? x.t.ResultType : " ",
+                                     ResultTypeDesc = x.t != null ? x.t.ResultType : " ",
+                                     //ResultTypeDesc = x.t != null ? db.GtElarty.Where(w => w.ResultType == x.t.ResultType).Select(r => r.ResultTypeDesc).First().ToString() : " ",
+                                     //SampleTypeDesc = x.t != null ? db.GtEcapcd.Where(w => w.ApplicationCode == x.t.SampleType).Select(s => s.CodeDesc).First().ToString() : " ",
+                                     SampleType = x.t != null ? x.t.SampleType : 0,
+                                     SampleTypeDesc = x.t != null ? x.t.SampleType.ToString() : " ",
+                                     LabPrintSequence = x.t != null ? x.t.LabPrintSequence : 0,
+                                     TimeRequiredForReport = x.t != null ? x.t.TimeRequiredForReport : 0,
+
+
+                                     IsResultCreated = x.t != null ? true : false,
+
+                                 }
+                        ).ToListAsync();
+                    return await result;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+        public async Task<DO_ServiceTemplateCreator> GetServiceTemplateByBKeyServiceID(int businessKey, int serviceID)
+        {
+            try
+            {
+                using (eSyaEnterprise db = new eSyaEnterprise())
+                {
+                    var result = db.GtElasms.Where(w => w.BusinessKey == businessKey && w.ServiceId==serviceID)  
+                        .Join(db.GtEssrms,
+                        t=> t.ServiceId,
+                        s=>s.ServiceId,
+                        (t,s) => new { t, s })
+                                 .Select(x => new DO_ServiceTemplateCreator
+                                 {
+                                     ServiceId = x.t.ServiceId,
+                                     ServiceDesc=x.s.ServiceDesc,
+                                     ResultType = x.t.ResultType ,
+                                     SampleType = x.t.SampleType,
+                                     LabPrintSequence = x.t.LabPrintSequence ,
+                                     TimeRequiredForReport = x.t.TimeRequiredForReport,
+
+                                 }
+                        ).FirstOrDefaultAsync();
+                    return await result;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+        public async Task<DO_ReturnParameter> AddOrUpdateServiceTemplateMaster(DO_ServiceTemplateCreator obj)
+        {
+            using (eSyaEnterprise db = new eSyaEnterprise())
+            {
+                using (var dbContext = db.Database.BeginTransaction())
+                {
+                    try
+                    {
+                            var RecordExist = db.GtElasms.Where(w => w.BusinessKey == obj.BusinessKey && w.ServiceId==obj.ServiceId).FirstOrDefault();
+                            if (RecordExist != null )
+                            {
+                            RecordExist.ResultType = obj.ResultType;
+                            RecordExist.SampleType = obj.SampleType;
+                            RecordExist.LabPrintSequence = obj.LabPrintSequence;
+                            RecordExist.TimeRequiredForReport = obj.TimeRequiredForReport;
+                            RecordExist.ActiveStatus = obj.ActiveStatus;
+                            RecordExist.ModifiedBy = obj.UserID;
+                            RecordExist.ModifiedOn = obj.CreatedOn;
+                            RecordExist.ModifiedTerminal = obj.TerminalID;
+                        }
+                            else
+                            {
+                                var servicetemplatemaster = new GtElasms
+                                {
+                                    BusinessKey=obj.BusinessKey,
+                                    ServiceId = obj.ServiceId,
+                                    ResultType = obj.ResultType,
+                                    SampleType = obj.SampleType,
+                                    LabPrintSequence=obj.LabPrintSequence,
+                                    TimeRequiredForReport=obj.TimeRequiredForReport,
+                                    ActiveStatus = obj.ActiveStatus,
+                                    FormId = obj.FormId,
+                                    CreatedBy = obj.UserID,
+                                    CreatedOn = obj.CreatedOn,
+                                    CreatedTerminal = obj.TerminalID
+                                };
+                                db.GtElasms.Add(servicetemplatemaster);
+
+                            }
+                        
+                        await db.SaveChangesAsync();
+                        dbContext.Commit();
+                        return new DO_ReturnParameter { Status = true };
+
+
+                    }
+                    catch (Exception ex)
+                    {
+                        dbContext.Rollback();
+                        throw ex;
+                    }
+                }
+            }
+        }
+    }
+}

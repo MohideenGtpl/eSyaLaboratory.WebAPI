@@ -1,0 +1,82 @@
+﻿using eSyaLaboratory.DL.Entities;
+using eSyaLaboratory.DO;
+using eSyaLaboratory.IF;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace eSyaLaboratory.DL.Repository
+{
+    public class CommonMethodRepository : ICommonMethodRepository
+    {
+        public async Task<List<DO_BusinessLocation>> GetBusinessKey()
+        {
+            try
+            {
+                using (var db = new eSyaEnterprise())
+                {
+                    var bk = db.GtEcbsln
+                        .Where(w => w.ActiveStatus)
+                        .Select(r => new DO_BusinessLocation
+                        {
+                            BusinessKey = r.BusinessKey,
+                            LocationDescription = r.BusinessName + " - " + r.LocationDescription
+                        }).ToListAsync();
+
+                    return await bk;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+        public async Task<List<DO_ApplicationCode>> GetApplicationCodesByCodeType(int codetype)
+        {
+            try
+            {
+                using (var db = new eSyaEnterprise())
+                {
+                    var bk = db.GtEcapcd
+                        .Where(w => w.ActiveStatus && w.CodeType == codetype)
+                        .Select(r => new DO_ApplicationCode
+                        {
+                            ApplicationCode = r.ApplicationCode,
+                            CodeDesc = r.CodeDesc
+                        }).ToListAsync();
+
+                    return await bk;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+        public async Task<List<DO_ServiceClass>> GetServiceClasses()
+        {
+            try
+            {
+                using (eSyaEnterprise db = new eSyaEnterprise())
+                {
+                    var result = db.GtEssrcl
+                        .Where(w=> w.ActiveStatus)
+                                 .Select(x => new DO_ServiceClass
+                                 {
+                                     ServiceClassId = x.ServiceClassId,
+                                     ServiceClassDesc = x.ServiceClassDesc,
+                                 }
+                        ).OrderBy(g => g.PrintSequence).ToListAsync();
+                    return await result;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+    }
+}

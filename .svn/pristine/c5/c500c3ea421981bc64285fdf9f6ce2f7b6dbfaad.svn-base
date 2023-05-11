@@ -1,0 +1,52 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using eSyaLaboratory.DL.Repository;
+using eSyaLaboratory.DO;
+using eSyaLaboratory.IF;
+using Microsoft.AspNetCore.Mvc;
+
+namespace eSyaLaboratory.WebAPI.Controllers
+{
+    [Route("api/[controller]/[action]")]
+    [ApiController]
+    public class ServiceTemplateCreatorController : ControllerBase
+    {
+        private readonly IServiceTemplateCreatorRepository _ServiceTemplateCreatorRepository;
+        public ServiceTemplateCreatorController(IServiceTemplateCreatorRepository servicetemplatecreatorRepository)
+        {
+            _ServiceTemplateCreatorRepository = servicetemplatecreatorRepository;
+        }
+        public async Task<IActionResult> GetResultTypes()
+        {
+            var ac = await _ServiceTemplateCreatorRepository.GetResultTypes();
+            return Ok(ac);
+        }
+        public async Task<IActionResult> GetServiceTemplateByBKeyServiceClass(int businessKey, int serviceClass)
+        {
+            var ac = await _ServiceTemplateCreatorRepository.GetServiceTemplateByBKeyServiceClass(businessKey, serviceClass) ;
+            return Ok(ac);
+        }
+        public async Task<IActionResult> GetServiceTemplateByBKeyServiceID(int businessKey, int serviceID)
+        {
+            var ac = await _ServiceTemplateCreatorRepository.GetServiceTemplateByBKeyServiceID(businessKey, serviceID);
+            return Ok(ac);
+        }
+        public async Task<IActionResult> AddOrUpdateServiceTemplateMaster(DO_ServiceTemplateCreator obj)
+        {
+            var msg = await _ServiceTemplateCreatorRepository.AddOrUpdateServiceTemplateMaster(obj);
+            return Ok(msg);
+        }
+        public async Task<IActionResult> GetServiceShortValuesByBKeyServiceID(int businessKey, int serviceID)
+        {
+            var ac = await _ServiceTemplateCreatorRepository.GetServiceShortValuesByBKeyServiceID(businessKey, serviceID);
+            return Ok(ac);
+        }
+        public async Task<IActionResult> AddOrUpdateServiceShortValues(DO_ServiceTemplateFull obj)
+        {
+            var msg = await _ServiceTemplateCreatorRepository.AddOrUpdateServiceShortValues(obj);
+            return Ok(msg);
+        }
+    }
+}

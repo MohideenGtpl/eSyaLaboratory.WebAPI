@@ -1,0 +1,70 @@
+﻿using eSyaLaboratory.DL.Entities;
+using eSyaLaboratory.DO;
+using eSyaLaboratory.IF;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace eSyaLaboratory.DL.Repository
+{
+    public class ServiceTemplateCreatorRepository : IServiceTemplateCreatorRepository
+    {
+        public async Task<List<DO_ResultType>> GetResultTypes()
+        {
+            try
+            {
+                using (eSyaEnterprise db = new eSyaEnterprise())
+                {
+                    var result = db.GtElarty
+                        .Where(w => w.ActiveStatus)
+                                 .Select(x => new DO_ResultType
+                                 {
+                                     ResultType = x.ResultType,
+                                     ResultTypeDesc = x.ResultTypeDesc,
+                                 }
+                        ).ToListAsync();
+                    return await result;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<List<DO_ServiceTemplateCreator>> GetServiceTemplateByBKeyServiceClass(int businessKey,int serviceClass)
+        {
+            try
+            {
+                using (eSyaEnterprise db = new eSyaEnterprise())
+                {
+                    var result = db.GtEssrms.Where(w=>w.ServiceClassId == serviceClass)
+                        .GroupJoin(db.GtElasms.Where(w => w.BusinessKey == businessKey),
+                        s => s.ServiceId,
+                        t => t.ServiceId,
+                        (s, t) => new { s, t = t.FirstOrDefault() })
+                                 .Select(x => new DO_ServiceTemplateCreator
+                                 {
+                                     ServiceId = x.s.ServiceId,
+                                     ServiceShortDesc=x.s.ServiceShortDesc,
+                                     ServiceDesc = x.s.ServiceDesc,
+                                     ResultType = x.t != null ? x.t.ResultType : "0",
+                                     SampleType = x.t != null ? x.t.SampleType : 0,
+                                     LabPrintSequence = x.t != null ? x.t.LabPrintSequence : 0,
+                                     TimeRequiredForReport = x.t != null ? x.t.TimeRequiredForReport : 0,
+
+                                 }
+                        ).ToListAsync();
+                    return await result;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+    }
+}

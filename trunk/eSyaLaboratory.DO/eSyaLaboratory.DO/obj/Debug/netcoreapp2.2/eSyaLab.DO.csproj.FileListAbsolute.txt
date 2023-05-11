@@ -1,0 +1,8 @@
+D:\eSya Enterprise\eSyaAllWebAPI_Project\eSyaLab.WebAPI\trunk\eSyaLab.DO\eSyaLab.DO\bin\Debug\netcoreapp2.2\eSyaLab.DO.deps.json
+D:\eSya Enterprise\eSyaAllWebAPI_Project\eSyaLab.WebAPI\trunk\eSyaLab.DO\eSyaLab.DO\bin\Debug\netcoreapp2.2\eSyaLab.DO.dll
+D:\eSya Enterprise\eSyaAllWebAPI_Project\eSyaLab.WebAPI\trunk\eSyaLab.DO\eSyaLab.DO\bin\Debug\netcoreapp2.2\eSyaLab.DO.pdb
+D:\eSya Enterprise\eSyaAllWebAPI_Project\eSyaLab.WebAPI\trunk\eSyaLab.DO\eSyaLab.DO\obj\Debug\netcoreapp2.2\eSyaLab.DO.csproj.CoreCompileInputs.cache
+D:\eSya Enterprise\eSyaAllWebAPI_Project\eSyaLab.WebAPI\trunk\eSyaLab.DO\eSyaLab.DO\obj\Debug\netcoreapp2.2\eSyaLab.DO.AssemblyInfoInputs.cache
+D:\eSya Enterprise\eSyaAllWebAPI_Project\eSyaLab.WebAPI\trunk\eSyaLab.DO\eSyaLab.DO\obj\Debug\netcoreapp2.2\eSyaLab.DO.AssemblyInfo.cs
+D:\eSya Enterprise\eSyaAllWebAPI_Project\eSyaLab.WebAPI\trunk\eSyaLab.DO\eSyaLab.DO\obj\Debug\netcoreapp2.2\eSyaLab.DO.dll
+D:\eSya Enterprise\eSyaAllWebAPI_Project\eSyaLab.WebAPI\trunk\eSyaLab.DO\eSyaLab.DO\obj\Debug\netcoreapp2.2\eSyaLab.DO.pdb

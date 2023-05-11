@@ -1,0 +1,86 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using eSyaLaboratory.DL.Repository;
+using eSyaLaboratory.DO;
+using eSyaLaboratory.IF;
+using Microsoft.AspNetCore.Mvc;
+
+namespace eSyaLaboratory.WebAPI.Controllers
+{
+    [Route("api/[controller]/[action]")]
+    [ApiController]
+    public class ServiceTemplateCreatorController : ControllerBase
+    {
+        private readonly IServiceTemplateCreatorRepository _ServiceTemplateCreatorRepository;
+        public ServiceTemplateCreatorController(IServiceTemplateCreatorRepository servicetemplatecreatorRepository)
+        {
+            _ServiceTemplateCreatorRepository = servicetemplatecreatorRepository;
+        }
+        public async Task<IActionResult> GetResultTypes()
+        {
+            var ac = await _ServiceTemplateCreatorRepository.GetResultTypes();
+            return Ok(ac);
+        }
+        public async Task<IActionResult> GetServiceTemplateByBKeyServiceClass(int businessKey, int serviceClass)
+        {
+            var ac = await _ServiceTemplateCreatorRepository.GetServiceTemplateByBKeyServiceClass(businessKey, serviceClass) ;
+            return Ok(ac);
+        }
+        public async Task<IActionResult> GetServiceTemplateByBKeyServiceID(int businessKey, int serviceID)
+        {
+            var ac = await _ServiceTemplateCreatorRepository.GetServiceTemplateByBKeyServiceID(businessKey, serviceID);
+            return Ok(ac);
+        }
+        public async Task<IActionResult> AddOrUpdateServiceTemplateMaster(DO_ServiceTemplateCreator obj)
+        {
+            var msg = await _ServiceTemplateCreatorRepository.AddOrUpdateServiceTemplateMaster(obj);
+            return Ok(msg);
+        }
+
+        public async Task<IActionResult> GetFullServiceResultTemplate(int businessKey, int serviceID,string resultType, string templateType)
+        {
+            var ac = new DO_ServiceTemplateFull();
+            if (resultType == "S")
+            {
+                 ac = await _ServiceTemplateCreatorRepository.GetServiceShortValuesByBKeyServiceID(businessKey, serviceID);
+            }
+            else if (resultType == "L")
+            {
+                ac = await _ServiceTemplateCreatorRepository.GetServiceLongValuesByBKeyServiceID(businessKey, serviceID);
+            }
+            else if (resultType == "A")
+            {
+                ac = await _ServiceTemplateCreatorRepository.GetServiceAnalysisValuesByBKeyServiceID(businessKey, serviceID);
+            }
+            else if (resultType == "D")
+            {
+                ac = await _ServiceTemplateCreatorRepository.GetServiceDescriptiveResultByBKeyServiceID(businessKey, serviceID,templateType);
+            }
+            return Ok(ac);
+        }
+        public async Task<IActionResult> AddOrUpdateFullServiceResultTemplate(DO_ServiceTemplateFull obj)
+        {
+            var msg = new DO_ReturnParameter();
+            if (obj.CommonValues.ResultType == "S")
+            {
+                msg = await _ServiceTemplateCreatorRepository.AddOrUpdateServiceShortValues(obj);
+            }
+            else if (obj.CommonValues.ResultType == "L")
+            {
+                msg = await _ServiceTemplateCreatorRepository.AddOrUpdateServiceLongValues(obj);
+            }
+            else if (obj.CommonValues.ResultType == "A")
+            {
+                msg = await _ServiceTemplateCreatorRepository.AddOrUpdateServiceAnalysisValues(obj);
+            }
+            else if (obj.CommonValues.ResultType == "D")
+            {
+                msg = await _ServiceTemplateCreatorRepository.AddOrUpdateServiceDescriptiveResult(obj);
+            }
+
+            return Ok(msg);
+        }
+    }
+}

@@ -1,0 +1,33 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using eSyaLaboratory.DL.Repository;
+using eSyaLaboratory.DO;
+using eSyaLaboratory.IF;
+using Microsoft.AspNetCore.Mvc;
+
+namespace eSyaLaboratory.WebAPI.Controllers
+{
+    [Route("api/[controller]/[action]")]
+    [ApiController]
+    public class ServiceTemplateCreatorController : ControllerBase
+    {
+        private readonly IServiceTemplateCreatorRepository _ServiceTemplateCreatorRepository;
+        public ServiceTemplateCreatorController(IServiceTemplateCreatorRepository servicetemplatecreatorRepository)
+        {
+            _ServiceTemplateCreatorRepository = servicetemplatecreatorRepository;
+        }
+
+        public async Task<IActionResult> GetResultTypes()
+        {
+            var ac = await _ServiceTemplateCreatorRepository.GetResultTypes();
+            return Ok(ac);
+        }
+        public async Task<IActionResult> GetServiceTemplateByBKeyServiceClass(int businessKey, int serviceClass)
+        {
+            var ac = await _ServiceTemplateCreatorRepository.GetServiceTemplateByBKeyServiceClass(businessKey, serviceClass) ;
+            return Ok(ac);
+        }
+    }
+}

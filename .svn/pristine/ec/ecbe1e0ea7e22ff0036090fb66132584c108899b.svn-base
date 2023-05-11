@@ -1,0 +1,466 @@
+﻿using eSyaLaboratory.DL.Entities;
+using eSyaLaboratory.DO;
+using eSyaLaboratory.IF;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace eSyaLaboratory.DL.Repository
+{
+    public class ServiceTemplateCreatorRepository : IServiceTemplateCreatorRepository
+    {
+        
+        public async Task<List<DO_ResultType>> GetResultTypes()
+        {
+            try
+            {
+                using (eSyaEnterprise db = new eSyaEnterprise())
+                {
+                    var result = db.GtElarty
+                        .Where(w => w.ActiveStatus)
+                                 .Select(x => new DO_ResultType
+                                 {
+                                     ResultType = x.ResultType,
+                                     ResultTypeDesc = x.ResultTypeDesc,
+                                 }
+                        ).ToListAsync();
+                    return await result;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+        public async Task<List<DO_ServiceTemplateCreator>> GetServiceTemplateByBKeyServiceClass(int businessKey, int serviceClass)
+        {
+            try
+            {
+                using (eSyaEnterprise db = new eSyaEnterprise())
+                {
+                    var result = db.GtEssrbl.Where(w => w.BusinessKey == businessKey)
+                        .Join(db.GtEssrms.Where(w => w.ServiceClassId == serviceClass),
+                        b=>b.ServiceId,
+                        s=>s.ServiceId,
+                        (b,s)=> new {b,s})
+                        .GroupJoin(db.GtElasms.Where(w => w.BusinessKey == businessKey),
+                            bs => bs.s.ServiceId,
+                            t => t.ServiceId,
+                            (bs, t) => new { bs, t = t.FirstOrDefault() })
+                        .GroupJoin(db.GtElarty,
+                            bst => new { ResultType = bst.t != null ? bst.t.ResultType : "" },
+                            r => new { r.ResultType },
+                            (bst, r) => new { bst, r = r.FirstOrDefault() })
+                        .GroupJoin(db.GtEcapcd,
+                            bstr => new { SampleType = bstr.bst.t != null ? bstr.bst.t.SampleType : 0 },
+                            m => new { SampleType = m.ApplicationCode },
+                            (bstr, m) => new { bstr, m = m.FirstOrDefault() })
+                        .Select(x => new DO_ServiceTemplateCreator
+                        {
+                            ServiceId = x.bstr.bst.bs.s.ServiceId,
+                            ServiceShortDesc = x.bstr.bst.bs.s.ServiceShortDesc,
+                            ServiceDesc = x.bstr.bst.bs.s.ServiceDesc,
+                            ResultType = x.bstr.bst.t != null ? x.bstr.bst.t.ResultType : " ",
+                            ResultTypeDesc = x.bstr.r != null ? x.bstr.r.ResultTypeDesc : " ",
+                            SampleType = x.bstr.bst.t != null ? x.bstr.bst.t.SampleType : 0,
+                            SampleTypeDesc = x.m != null ? x.m.CodeDesc : " ",
+                            LabPrintSequence = x.bstr.bst.t != null ? x.bstr.bst.t.LabPrintSequence : 0,
+                            TimeRequiredForReport = x.bstr.bst.t != null ? x.bstr.bst.t.TimeRequiredForReport : 0,
+
+
+                            IsResultCreated = x.bstr.bst.t != null ? true : false,
+
+                        }
+                        ).ToListAsync();
+                    return await result;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+        public async Task<DO_ServiceTemplateCreator> GetServiceTemplateByBKeyServiceID(int businessKey, int serviceID)
+        {
+            try
+            {
+                using (eSyaEnterprise db = new eSyaEnterprise())
+                {
+                    var result = db.GtElasms.Where(w => w.BusinessKey == businessKey && w.ServiceId == serviceID)
+                        .Join(db.GtEssrms,
+                        t => t.ServiceId,
+                        s => s.ServiceId,
+                        (t, s) => new { t, s })
+                                 .Select(x => new DO_ServiceTemplateCreator
+                                 {
+                                     ServiceId = x.t.ServiceId,
+                                     ServiceDesc = x.s.ServiceDesc,
+                                     ResultType = x.t.ResultType,
+                                     SampleType = x.t.SampleType,
+                                     LabPrintSequence = x.t.LabPrintSequence,
+                                     TimeRequiredForReport = x.t.TimeRequiredForReport,
+
+                                 }
+                        ).FirstOrDefaultAsync();
+                    return await result;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+        public async Task<DO_ReturnParameter> AddOrUpdateServiceTemplateMaster(DO_ServiceTemplateCreator obj)
+        {
+            using (eSyaEnterprise db = new eSyaEnterprise())
+            {
+                using (var dbContext = db.Database.BeginTransaction())
+                {
+                    try
+                    {
+                        var RecordExist = db.GtElasms.Where(w => w.BusinessKey == obj.BusinessKey && w.ServiceId == obj.ServiceId).FirstOrDefault();
+                        if (RecordExist != null)
+                        {
+                            RecordExist.ResultType = obj.ResultType;
+                            RecordExist.SampleType = obj.SampleType;
+                            RecordExist.LabPrintSequence = obj.LabPrintSequence;
+                            RecordExist.TimeRequiredForReport = obj.TimeRequiredForReport;
+                            RecordExist.ActiveStatus = obj.ActiveStatus;
+                            RecordExist.ModifiedBy = obj.UserID;
+                            RecordExist.ModifiedOn = obj.CreatedOn;
+                            RecordExist.ModifiedTerminal = obj.TerminalID;
+                        }
+                        else
+                        {
+                            var servicetemplatemaster = new GtElasms
+                            {
+                                BusinessKey = obj.BusinessKey,
+                                ServiceId = obj.ServiceId,
+                                ResultType = obj.ResultType,
+                                SampleType = obj.SampleType,
+                                LabPrintSequence = obj.LabPrintSequence,
+                                TimeRequiredForReport = obj.TimeRequiredForReport,
+                                ActiveStatus = obj.ActiveStatus,
+                                FormId = obj.FormId,
+                                CreatedBy = obj.UserID,
+                                CreatedOn = obj.CreatedOn,
+                                CreatedTerminal = obj.TerminalID
+                            };
+                            db.GtElasms.Add(servicetemplatemaster);
+
+                        }
+
+                        await db.SaveChangesAsync();
+                        dbContext.Commit();
+                        return new DO_ReturnParameter { Status = true };
+
+
+                    }
+                    catch (Exception ex)
+                    {
+                        dbContext.Rollback();
+                        throw ex;
+                    }
+                }
+            }
+        }
+        #region ShortValues
+        public async Task<DO_ServiceTemplateFull> GetServiceShortValuesByBKeyServiceID(int businessKey, int serviceID)
+        {
+            try
+            {
+                using (eSyaEnterprise db = new eSyaEnterprise())
+                {
+                    var obj = new DO_ServiceTemplateFull();
+                    obj.CommonValues = await GetServiceCommonValuesByBKeyServiceID(businessKey, serviceID);
+                    var shortvalues = db.GtElassr.Where(w => w.BusinessKey == businessKey && w.ServiceId == serviceID)
+                        .Select(x => new DO_ShortNormalValue
+                        {
+                            ServiceId = x.ServiceId,
+                            SerialNumber = x.SerialNumber,
+                            TestParameter=x.TestParameter,
+                            Sex = x.Sex,
+                            StartAge = x.StartAge,
+                            StartAgeType = x.StartAgeType,
+                            EndAge = x.EndAge,
+                            EndAgeType = x.EndAgeType,
+                            MinValue = x.MinValue,
+                            MaxValue = x.MaxValue,
+                            NormalValues = x.NormalValues,
+                            HypoValue = x.HypoValue,
+                            HyperValue = x.HyperValue,
+                            Desirable = x.Desirable,
+                            BorderLine = x.BorderLine,
+                            HighRisk = x.HighRisk
+
+                        }
+                        ).ToListAsync();
+                    obj.l_Short = await shortvalues;
+
+                    var shortheader = db.GtElassu.Where(w => w.BusinessKey == businessKey && w.ServiceId == serviceID)
+                        .Select(x => new DO_ShortValueHeader
+                        {
+                            ServiceId = x.ServiceId,
+                            Unit = x.Unit,
+                            IsNumericResultValue = x.IsNumericResultValue,
+                            ResultComputed = x.ResultComputed,
+                            ResultFormula = x.ResultFormula,  
+                        }
+                        ).FirstOrDefaultAsync();
+                    obj.ShortHeader = await shortheader;
+
+                    return obj;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+        public async Task<DO_ReturnParameter> AddOrUpdateServiceShortValues(DO_ServiceTemplateFull obj)
+        {
+            using (eSyaEnterprise db = new eSyaEnterprise())
+            {
+                using (var dbContext = db.Database.BeginTransaction())
+                {
+                    try
+                    {
+                        // Update common values
+                        var response = await AddOrUpdateServiceCommonValues(obj.CommonValues);
+                        if (!response.Status)
+                        {
+                            return new DO_ReturnParameter() { Status = false, Message = response.Message };                            
+                        }
+                        //Update Short Header
+                        var existheader = db.GtElassu.Where(w => w.BusinessKey == obj.ShortHeader.BusinessKey && w.ServiceId == obj.ShortHeader.ServiceId).FirstOrDefault();
+                        if (existheader != null)
+                        {
+                            if(existheader.Unit != obj.ShortHeader.Unit || existheader.IsNumericResultValue != obj.ShortHeader.IsNumericResultValue || existheader.ResultComputed != obj.ShortHeader.ResultComputed || existheader.ResultFormula != obj.ShortHeader.ResultFormula)
+                            {
+                                existheader.Unit = obj.ShortHeader.Unit;
+                                existheader.IsNumericResultValue = obj.ShortHeader.IsNumericResultValue;
+                                existheader.ResultComputed = obj.ShortHeader.ResultComputed;
+                                existheader.ResultFormula = obj.ShortHeader.ResultFormula;
+
+                                existheader.ModifiedBy = obj.CommonValues.UserID;
+                                existheader.ModifiedOn = obj.CommonValues.CreatedOn;
+                                existheader.ModifiedTerminal = obj.CommonValues.TerminalID;
+                            }
+
+                        }
+                        else
+                        {
+                            var shortheader = new GtElassu
+                            {
+                                BusinessKey = obj.ShortHeader.BusinessKey,
+                                ServiceId = obj.ShortHeader.ServiceId,
+                                Unit = obj.ShortHeader.Unit,
+                                IsNumericResultValue = obj.ShortHeader.IsNumericResultValue,
+                                ResultComputed = obj.ShortHeader.ResultComputed,
+                                ResultFormula = obj.ShortHeader.ResultFormula,
+                               
+                                ActiveStatus = true,
+                                FormId = obj.CommonValues.FormId,
+                                CreatedBy = obj.CommonValues.UserID,
+                                CreatedOn = obj.CommonValues.CreatedOn,
+                                CreatedTerminal = obj.CommonValues.TerminalID
+                            };
+                            db.GtElassu.Add(shortheader);
+                        }
+                        // Update Short values
+                        foreach (var short_value in obj.l_Short)
+                        {
+                            if (short_value.SerialNumber == 0)
+                            {
+                                var newSerial = db.GtElassr.Where(w=> w.BusinessKey==short_value.BusinessKey && w.ServiceId==short_value.ServiceId).Select(a => (int)a.SerialNumber).DefaultIfEmpty(0).Max() + 1;
+                                var serviceshortvalue = new GtElassr
+                                {
+                                    BusinessKey = short_value.BusinessKey,
+                                    ServiceId = short_value.ServiceId,
+                                    SerialNumber = newSerial,
+                                    TestParameter = "0",
+                                    Sex= short_value.Sex,
+                                    StartAge= short_value.StartAge,
+                                    StartAgeType= short_value.StartAgeType,
+                                    EndAge= short_value.EndAge,
+                                    EndAgeType= short_value.EndAgeType,
+                                    MinValue= short_value.MinValue,
+                                    MaxValue= short_value.MaxValue,
+                                    NormalValues= short_value.NormalValues,
+                                    HypoValue= short_value.HypoValue,
+                                    HyperValue= short_value.HyperValue,
+
+                                    Desirable = 0,
+                                    BorderLine = 0,
+                                    HighRisk = 0,
+
+                                    ActiveStatus = true,
+                                    FormId = obj.CommonValues.FormId,
+                                    CreatedBy = obj.CommonValues.UserID,
+                                    CreatedOn = obj.CommonValues.CreatedOn,
+                                    CreatedTerminal = obj.CommonValues.TerminalID
+                                };
+                                db.GtElassr.Add(serviceshortvalue);
+                            }
+                            else
+                            {
+
+                                var ExistRecord = db.GtElassr.Where(w => w.BusinessKey == short_value.BusinessKey && w.ServiceId == short_value.ServiceId && w.SerialNumber == short_value.SerialNumber).FirstOrDefault();
+                                int flag = 0;
+                                if (ExistRecord.Sex != short_value.Sex)
+                                {
+                                    ExistRecord.Sex = short_value.Sex;
+                                    flag = 1;
+                                }
+                                if (ExistRecord.StartAge != short_value.StartAge)
+                                {
+                                    ExistRecord.StartAge = short_value.StartAge;
+                                    flag = 1;
+                                }
+                                if (ExistRecord.StartAgeType != short_value.StartAgeType)
+                                {
+                                    ExistRecord.StartAgeType = short_value.StartAgeType;
+                                    flag = 1;
+                                }
+                                if (ExistRecord.EndAge != short_value.EndAge)
+                                {
+                                    ExistRecord.EndAge = short_value.EndAge;
+                                    flag = 1;
+                                }
+                                if (ExistRecord.EndAgeType != short_value.EndAgeType)
+                                {
+                                    ExistRecord.EndAgeType = short_value.EndAgeType;
+                                    flag = 1;
+                                }
+                                if (ExistRecord.MinValue != short_value.MinValue)
+                                {
+                                    ExistRecord.MinValue = short_value.MinValue;
+                                    flag = 1;
+                                }
+                                if (ExistRecord.MaxValue != short_value.MaxValue)
+                                {
+                                    ExistRecord.MaxValue = short_value.MaxValue;
+                                    flag = 1;
+                                }
+                                if (ExistRecord.NormalValues != short_value.NormalValues)
+                                {
+                                    ExistRecord.NormalValues = short_value.NormalValues;
+                                    flag = 1;
+                                }
+                                if (ExistRecord.HypoValue != short_value.HypoValue)
+                                {
+                                    ExistRecord.HypoValue = short_value.HypoValue;
+                                    flag = 1;
+                                }
+                                if (ExistRecord.HyperValue != short_value.HyperValue)
+                                {
+                                    ExistRecord.HyperValue = short_value.HyperValue;
+                                    flag = 1;
+                                }
+                                
+                                 if(flag==1)
+                                {
+                                    ExistRecord.ModifiedBy = obj.CommonValues.UserID;
+                                    ExistRecord.ModifiedOn = obj.CommonValues.CreatedOn;
+                                    ExistRecord.ModifiedTerminal = obj.CommonValues.TerminalID;
+                                }  
+                            }
+                        }
+                        await db.SaveChangesAsync();
+                        dbContext.Commit();
+                        return new DO_ReturnParameter { Status = true };
+
+
+                    }
+                    catch (Exception ex)
+                    {
+                        dbContext.Rollback();
+                        return new DO_ReturnParameter() { Status = false, Message = ex.Message };
+                    }
+                }
+            }
+        }
+        #endregion
+        #region CommonValues
+        public async Task<DO_ReturnParameter> AddOrUpdateServiceCommonValues(DO_ServiceCommonValues obj)
+        {
+            using (eSyaEnterprise db = new eSyaEnterprise())
+            {
+                using (var dbContext = db.Database.BeginTransaction())
+                {
+                    try
+                    {
+                        var RecordExist = db.GtElascm.Where(w => w.BusinessKey == obj.BusinessKey && w.ServiceId == obj.ServiceId ).FirstOrDefault();
+                        if (RecordExist != null)
+                        {
+                            int flag = 0;
+                            if (RecordExist.Interpretation != obj.Interpretation || RecordExist.Impression != obj.Impression || RecordExist.Note != obj.Note)
+                            {
+                                RecordExist.Interpretation = obj.Interpretation;                               
+                                RecordExist.Impression = obj.Impression;
+                                RecordExist.Note = obj.Note;
+
+                                RecordExist.ModifiedBy = obj.UserID;
+                                RecordExist.ModifiedOn = obj.CreatedOn;
+                                RecordExist.ModifiedTerminal = obj.TerminalID;
+                            }
+
+                        }
+                        else
+                        {
+                            var servicecommonvalue = new GtElascm
+                            {
+                                BusinessKey = obj.BusinessKey,
+                                ServiceId = obj.ServiceId,
+                                Interpretation = obj.Interpretation,
+                                Impression = obj.Impression,
+                                Note = obj.Note,
+                                
+                                ActiveStatus = true,
+                                FormId = obj.FormId,
+                                CreatedBy = obj.UserID,
+                                CreatedOn = obj.CreatedOn,
+                                CreatedTerminal = obj.TerminalID
+                            };
+                            db.GtElascm.Add(servicecommonvalue);
+                        }
+                        await db.SaveChangesAsync();
+                        dbContext.Commit();
+                        return new DO_ReturnParameter { Status = true };
+                    }
+                    catch (Exception ex)
+                    {
+                        dbContext.Rollback();
+                        return new DO_ReturnParameter() { Status = false, Message = ex.Message };
+                    }
+                }
+            }
+        }
+        public async Task<DO_ServiceCommonValues> GetServiceCommonValuesByBKeyServiceID(int businessKey, int serviceID)
+        {
+            try
+            {
+                using (eSyaEnterprise db = new eSyaEnterprise())
+                {
+                    var result = db.GtElascm.Where(w => w.BusinessKey == businessKey && w.ServiceId == serviceID)
+                        .Select(x => new DO_ServiceCommonValues
+                                 {
+                                     Interpretation = x.Interpretation,
+                                     Impression = x.Impression,
+                                     Note = x.Note,
+                                 }
+                        ).FirstOrDefaultAsync();
+                    return await result;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+        #endregion
+    }
+}
